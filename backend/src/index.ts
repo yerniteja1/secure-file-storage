@@ -23,9 +23,9 @@ app.use(cors({
   credentials: true,
 }));
 
-// Body parsing
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Body parsing (disable for multipart - multer handles it)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Logging
 app.use(morgan('dev'));
@@ -78,6 +78,11 @@ const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/api/health`);
 });
+
+// Increase timeout for large file uploads (5 minutes)
+server.timeout = 5 * 60 * 1000;
+server.keepAliveTimeout = 5 * 60 * 1000;
+server.headersTimeout = 5 * 60 * 1000;
 
 // Graceful shutdown
 const shutdown = async () => {

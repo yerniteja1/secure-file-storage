@@ -7,6 +7,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 5 * 60 * 1000, // 5 minutes for large file uploads
 });
 
 // Request interceptor to add auth token
@@ -80,6 +81,7 @@ export const filesAPI = {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: 10 * 60 * 1000, // 10 minutes for large file uploads
       onUploadProgress: (progressEvent) => {
         if (progressEvent.total && onProgress) {
           const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -101,7 +103,7 @@ export const filesAPI = {
   delete: (id: string) =>
     api.delete(`/files/${id}`),
 
-  update: (id: string, data: { filename?: string }) =>
+  update: (id: string, data: { originalName?: string }) =>
     api.patch(`/files/${id}`, data),
 
   toggleShare: (id: string) =>
