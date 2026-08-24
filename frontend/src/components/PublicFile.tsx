@@ -1,15 +1,9 @@
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { filesAPI } from '../api';
+import { usePublicFile } from '../hooks/useFiles';
 
 export default function PublicFile() {
   const { shareId } = useParams<{ shareId: string }>();
-
-  const { data: fileData, isLoading, error } = useQuery({
-    queryKey: ['publicFile', shareId],
-    queryFn: () => filesAPI.getPublic(shareId!),
-    enabled: !!shareId,
-  });
+  const { data: file, isLoading, error } = usePublicFile(shareId);
 
   if (isLoading) {
     return (
@@ -19,7 +13,7 @@ export default function PublicFile() {
     );
   }
 
-  if (error || !fileData?.data) {
+  if (error || !file) {
     return (
       <div className="public-file-container">
         <div className="error-state">
@@ -32,8 +26,6 @@ export default function PublicFile() {
       </div>
     );
   }
-
-  const file = fileData.data;
 
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return bytes + ' B';

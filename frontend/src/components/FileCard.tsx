@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { filesAPI, FileUploadResponse } from '../api';
+import { FileUploadResponse } from '../api';
+import { useDeleteFile, useToggleShare } from '../hooks/useFiles';
 
 interface FileCardProps {
   file: FileUploadResponse;
@@ -8,28 +8,15 @@ interface FileCardProps {
 }
 
 export default function FileCard({ file, viewMode }: FileCardProps) {
-  const queryClient = useQueryClient();
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const deleteMutation = useMutation({
-    mutationFn: () => filesAPI.delete(file.id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['files'] });
-    },
-  });
-
-  const shareMutation = useMutation({
-    mutationFn: () => filesAPI.toggleShare(file.id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['files'] });
-      setShowShareModal(false);
-    },
-  });
+  const deleteMutation = useDeleteFile();
+  const shareMutation = useToggleShare();
 
   const handleDelete = () => {
     if (window.confirm(`Are you sure you want to delete "${file.originalName}"?`)) {
-      deleteMutation.mutate();
+      deleteMutation.mutate(file.id);
     }
   };
 
@@ -40,7 +27,6 @@ export default function FileCard({ file, viewMode }: FileCardProps) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback for non-HTTPS or denied permissions
       const textArea = document.createElement('textarea');
       textArea.value = shareUrl;
       document.body.appendChild(textArea);
@@ -99,7 +85,7 @@ export default function FileCard({ file, viewMode }: FileCardProps) {
     <>
       <div className={`file-card ${viewMode}`}>
         <div className="file-icon">{getFileIcon(file.mimeType)}</div>
-        
+
         <div className="file-details">
           <h3 className="file-name" title={file.originalName}>
             {file.originalName}
@@ -127,7 +113,7 @@ export default function FileCard({ file, viewMode }: FileCardProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
           </a>
-          
+
           <button
             onClick={() => setShowShareModal(true)}
             className="action-btn"
@@ -137,7 +123,7 @@ export default function FileCard({ file, viewMode }: FileCardProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
             </svg>
           </button>
-          
+
           <button
             onClick={handleDelete}
             className="action-btn danger"
@@ -158,7 +144,7 @@ export default function FileCard({ file, viewMode }: FileCardProps) {
             <p>
               Current status: <strong>{file.isPublic ? 'Public' : 'Private'}</strong>
             </p>
-            
+
             {file.isPublic && file.shareId && (
               <div className="share-link">
                 <input
@@ -171,10 +157,10 @@ export default function FileCard({ file, viewMode }: FileCardProps) {
                 </button>
               </div>
             )}
-            
+
             <div className="modal-actions">
               <button
-                onClick={() => shareMutation.mutate()}
+                onClick={() => shareMutation.mutate(file.id)}
                 className={file.isPublic ? 'btn-secondary' : 'btn-primary'}
                 disabled={shareMutation.isPending}
               >

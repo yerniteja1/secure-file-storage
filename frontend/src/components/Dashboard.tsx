@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { filesAPI } from '../api';
 import { useAuth } from '../contexts/AuthContext';
+import { useFiles } from '../hooks/useFiles';
+import { useDebounce } from '../hooks/useDebounce';
 import FileList from './FileList';
 import FileUpload from './FileUpload';
 
@@ -9,12 +9,9 @@ export default function Dashboard() {
   const { user, logout } = useAuth();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const debouncedSearch = useDebounce(search, 300);
 
-  const { data: filesData, isLoading, error } = useQuery({
-    queryKey: ['files', page, search],
-    queryFn: () => filesAPI.list(page, 10, search || undefined),
-    select: (response) => response.data,
-  });
+  const { data: filesData, isLoading, error } = useFiles(page, 10, debouncedSearch);
 
   const handleSearch = (value: string) => {
     setSearch(value);
@@ -61,7 +58,7 @@ export default function Dashboard() {
           ) : (
             <>
               <FileList files={filesData?.data || []} />
-              
+
               {filesData?.pagination && filesData.pagination.totalPages > 1 && (
                 <div className="pagination">
                   <button

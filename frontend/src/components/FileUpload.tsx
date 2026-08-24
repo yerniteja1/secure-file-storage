@@ -1,82 +1,13 @@
 import { useState, useRef, DragEvent } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { filesAPI } from '../api';
-
-interface UploadState {
-  file: File;
-  progress: number;
-  status: 'pending' | 'uploading' | 'success' | 'error';
-  error?: string;
-}
+import { useUpload } from '../hooks/useUpload';
 
 export default function FileUpload() {
-  const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploads, setUploads] = useState<UploadState[]>([]);
+  const { uploads, uploadFiles } = useUpload();
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const uploadMutation = useMutation({
-    mutationFn: (file: File) => {
-      return new Promise((resolve, reject) => {
-        filesAPI.upload(file, (progress) => {
-          setUploads((prev) =>
-            prev.map((u) =>
-              u.file === file ? { ...u, progress, status: 'uploading' as const } : u
-            )
-          );
-        }).then(resolve).catch(reject);
-      });
-    },
-    onSuccess: (_, file) => {
-      setUploads((prev) =>
-        prev.map((u) =>
-          u.file === file ? { ...u, status: 'success' as const, progress: 100 } : u
-        )
-      );
-      queryClient.invalidateQueries({ queryKey: ['files'] });
-      
-      // Remove successful upload after 3 seconds
-      setTimeout(() => {
-        setUploads((prev) => prev.filter((u) => u.file !== file));
-      }, 3000);
-    },
-    onError: (error: Error, file) => {
-      setUploads((prev) =>
-        prev.map((u) =>
-          u.file === file
-            ? { ...u, status: 'error' as const, error: error.message }
-            : u
-        )
-      );
-    },
-  });
-
   const handleFileSelect = (files: FileList | null) => {
-    if (!files) return;
-
-    Array.from(files).forEach((file) => {
-      // Validate file size (100MB)
-      if (file.size > 100 * 1024 * 1024) {
-        setUploads((prev) => [
-          ...prev,
-          {
-            file,
-            progress: 0,
-            status: 'error' as const,
-            error: 'File size exceeds 100MB limit',
-          },
-        ]);
-        return;
-      }
-
-      setUploads((prev) => [
-        ...prev,
-        { file, progress: 0, status: 'pending' as const },
-      ]);
-      uploadMutation.mutate(file);
-    });
-
-    // Reset file input
+    uploadFiles(files);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -143,7 +74,7 @@ export default function FileUpload() {
                   {(upload.file.size / 1024 / 1024).toFixed(2)} MB
                 </span>
               </div>
-              
+
               {upload.status === 'uploading' && (
                 <div className="progress-bar">
                   <div
@@ -153,11 +84,11 @@ export default function FileUpload() {
                   <span className="progress-text">{upload.progress}%</span>
                 </div>
               )}
-              
+
               {upload.status === 'success' && (
                 <span className="status-success">Uploaded</span>
               )}
-              
+
               {upload.status === 'error' && (
                 <span className="status-error">{upload.error}</span>
               )}
