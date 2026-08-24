@@ -191,7 +191,11 @@ router.get(
 
       const filePath = path.join(process.env.UPLOAD_DIR || './uploads', file.filename);
 
-      res.download(filePath, file.originalName);
+      res.download(filePath, file.originalName, (err) => {
+        if (err) {
+          next(new NotFoundError('File not found on disk'));
+        }
+      });
     } catch (error) {
       next(error);
     }
@@ -393,7 +397,11 @@ router.get(
 
       const filePath = path.join(process.env.UPLOAD_DIR || './uploads', file.filename);
 
-      res.download(filePath, file.originalName);
+      res.download(filePath, file.originalName, (err) => {
+        if (err) {
+          next(new NotFoundError('File not found on disk'));
+        }
+      });
     } catch (error) {
       next(error);
     }

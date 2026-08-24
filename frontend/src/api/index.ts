@@ -55,6 +55,11 @@ export interface FileUploadResponse {
   createdAt: string;
 }
 
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  data: T;
+}
+
 export interface PaginatedResponse<T> {
   success: boolean;
   data: T[];
@@ -71,7 +76,7 @@ export const filesAPI = {
     const formData = new FormData();
     formData.append('file', file);
 
-    return api.post<PaginatedResponse<FileUploadResponse>>('/files/upload', formData, {
+    return api.post<ApiResponse<FileUploadResponse>>('/files/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

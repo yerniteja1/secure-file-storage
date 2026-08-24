@@ -28,7 +28,7 @@ export const loginSchema = z.object({
 });
 
 export const fileUpdateSchema = z.object({
-  filename: z
+  originalName: z
     .string()
     .min(1, 'Filename is required')
     .max(255, 'Filename is too long')

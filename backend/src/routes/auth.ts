@@ -3,8 +3,9 @@ import bcrypt from 'bcryptjs';
 import prisma from '../utils/prisma';
 import { generateToken } from '../utils/jwt';
 import { registerSchema, loginSchema, RegisterInput, LoginInput } from '../utils/validation';
-import { ConflictError, UnauthorizedError, BadRequestError } from '../utils/errors';
-import { ApiResponse } from '../types';
+import { ConflictError, UnauthorizedError } from '../utils/errors';
+import { authenticate } from '../middleware/auth';
+import { ApiResponse, AuthRequest } from '../types';
 
 const router = Router();
 
@@ -96,20 +97,14 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
   }
 });
 
-router.get('/me', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/me', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedError('No token provided');
+    if (!req.user) {
+      throw new UnauthorizedError('User not authenticated');
     }
 
-    const token = authHeader.substring(7);
-    const { verifyToken } = await import('../utils/jwt');
-    const payload = verifyToken(token);
-
     const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
+      where: { id: req.user.userId },
       select: {
         id: true,
         email: true,

@@ -33,11 +33,23 @@ export default function FileCard({ file, viewMode }: FileCardProps) {
     }
   };
 
-  const handleCopyLink = () => {
+  const handleCopyLink = async () => {
     const shareUrl = `${window.location.origin}/share/${file.shareId}`;
-    navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for non-HTTPS or denied permissions
+      const textArea = document.createElement('textarea');
+      textArea.value = shareUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const getFileIcon = (mimeType: string) => {

@@ -1,17 +1,16 @@
-import { useState, useRef } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { filesAPI, FileUploadResponse } from '../api';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { filesAPI } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 import FileList from './FileList';
 import FileUpload from './FileUpload';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
-  const { data: filesData, isLoading } = useQuery({
+  const { data: filesData, isLoading, error } = useQuery({
     queryKey: ['files', page, search],
     queryFn: () => filesAPI.list(page, 10, search || undefined),
     select: (response) => response.data,
@@ -55,6 +54,10 @@ export default function Dashboard() {
 
           {isLoading ? (
             <div className="loading">Loading files...</div>
+          ) : error ? (
+            <div className="error-message">
+              Failed to load files. Please try again.
+            </div>
           ) : (
             <>
               <FileList files={filesData?.data || []} />

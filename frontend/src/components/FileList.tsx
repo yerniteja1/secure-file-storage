@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { filesAPI, FileUploadResponse } from '../api';
+import { FileUploadResponse } from '../api';
 import FileCard from './FileCard';
 
 interface FileListProps {
@@ -8,7 +7,6 @@ interface FileListProps {
 }
 
 export default function FileList({ files }: FileListProps) {
-  const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   if (files.length === 0) {
