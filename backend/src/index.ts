@@ -5,7 +5,11 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import path from 'path';
 import { prisma } from './utils/prisma';
+import authRoutes from './routes/auth';
+import fileRoutes from './routes/files';
+import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -25,6 +29,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // Logging
 app.use(morgan('dev'));
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
@@ -51,6 +58,10 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/files', fileRoutes);
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({
@@ -60,13 +71,7 @@ app.use((req, res) => {
 });
 
 // Global error handler
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({
-    success: false,
-    error: 'Internal server error',
-  });
-});
+app.use(errorHandler);
 
 // Start server
 const server = app.listen(PORT, () => {
