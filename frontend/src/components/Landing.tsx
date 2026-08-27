@@ -1,17 +1,46 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Landing() {
   const { isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
+  const [isDragOver, setIsDragOver] = useState(false);
 
-  const primaryAction = isAuthenticated ? (
-    <Link to="/dashboard" className="btn-primary landing-cta">
-      Go to Dashboard
-    </Link>
-  ) : (
-    <Link to="/register" className="btn-primary landing-cta">
-      Get Started
-    </Link>
+  const handleUploadClick = () => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    } else {
+      navigate('/login');
+    }
+  };
+
+  const handleDropzoneClick = () => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    } else {
+      navigate('/login');
+    }
+  };
+
+  const handleDropzoneDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    handleDropzoneClick();
+  };
+
+  const primaryAction = (
+    <button onClick={handleUploadClick} className="btn-primary landing-cta landing-upload-btn">
+      <svg className="landing-upload-glyph" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+        />
+      </svg>
+      {isAuthenticated ? 'Upload Files' : 'Sign in to Upload'}
+    </button>
   );
 
   const secondaryAction = isAuthenticated ? null : (
@@ -79,41 +108,67 @@ export default function Landing() {
           </div>
 
           <div className="landing-hero-visual">
-            <div className="landing-preview">
-              <div className="landing-preview-header">
-                <span className="landing-dot" />
-                <span className="landing-dot" />
-                <span className="landing-dot" />
-              </div>
-              <div className="landing-preview-body">
-                <div className="landing-preview-row">
-                  <div className="landing-preview-icon">📄</div>
-                  <div className="landing-preview-meta">
-                    <span className="landing-preview-name">Quarterly-Report.pdf</span>
-                    <span className="landing-preview-size">2.4 MB · Private</span>
-                  </div>
-                </div>
-                <div className="landing-preview-row">
-                  <div className="landing-preview-icon">🖼️</div>
-                  <div className="landing-preview-meta">
-                    <span className="landing-preview-name">Design-Mockup.png</span>
-                    <span className="landing-preview-size">5.1 MB · Public</span>
-                  </div>
-                </div>
-                <div className="landing-preview-row">
-                  <div className="landing-preview-icon">🎞️</div>
-                  <div className="landing-preview-meta">
-                    <span className="landing-preview-name">Demo-Video.mp4</span>
-                    <span className="landing-preview-size">48 MB · Private</span>
-                  </div>
-                </div>
-              </div>
+            <div
+              className={`landing-dropzone ${isDragOver ? 'drag-over' : ''} ${
+                isAuthenticated ? 'is-authed' : 'is-guest'
+              }`}
+              onClick={handleDropzoneClick}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragOver(true);
+              }}
+              onDragLeave={() => setIsDragOver(false)}
+              onDrop={handleDropzoneDrop}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleDropzoneClick();
+                }
+              }}
+            >
+              <div className="landing-dropzone-glow" />
+              <svg
+                className="landing-dropzone-icon"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.8}
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                />
+              </svg>
+              <p className="landing-dropzone-title">
+                {isAuthenticated ? 'Drop files to upload' : 'Sign in to upload files'}
+              </p>
+              <p className="landing-dropzone-hint">
+                {isAuthenticated
+                  ? 'Drag & drop or click to go to your dashboard'
+                  : 'Click anywhere to continue to login'}
+              </p>
+              {!isAuthenticated && (
+                <span className="landing-lock-badge">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                  </svg>
+                  Login required
+                </span>
+              )}
             </div>
           </div>
         </section>
 
         <section className="landing-features">
-          <div className="landing-feature-card">
+          <div className="landing-feature-card landing-feature-upload">
             <div className="landing-feature-icon">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -130,6 +185,9 @@ export default function Landing() {
               time with clear success and error states. Uploading is available
               only to signed-in users.
             </p>
+            <button onClick={handleUploadClick} className="landing-feature-link">
+              {isAuthenticated ? 'Open uploader →' : 'Sign in to upload →'}
+            </button>
           </div>
 
           <div className="landing-feature-card">
