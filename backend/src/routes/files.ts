@@ -7,12 +7,15 @@ const router = Router();
 
 // Authenticated routes
 router.post('/upload', authenticate, uploadMiddleware.single('file'), fileController.upload);
+router.get('/trash', authenticate, fileController.listTrash);
 router.get('/', authenticate, fileController.list);
 router.get('/:id', authenticate, fileController.getOne);
 router.get('/:id/download', authenticate, fileController.download);
 router.delete('/:id', authenticate, fileController.remove);
+router.delete('/:id/permanent', authenticate, fileController.permanentDelete);
 router.patch('/:id', authenticate, fileController.update);
 router.patch('/:id/share', authenticate, fileController.toggleShare);
+router.patch('/:id/restore', authenticate, fileController.restore);
 
 // Public routes (no auth required)
 router.get('/public/:shareId', fileController.getPublic);

@@ -21,19 +21,28 @@ function toFileResponse(file: File): FileUploadResponse {
     url: file.url,
     isPublic: file.isPublic,
     shareId: file.shareId,
+    deletedAt: file.deletedAt ? file.deletedAt.toISOString() : null,
     createdAt: file.createdAt,
   };
 }
 
 async function getFileOrThrow(fileId: string, userId: string): Promise<File> {
-  const file = await prisma.file.findUnique({ where: { id: fileId } });
+  const file = await prisma.file.findFirst({
+    where: { id: fileId, userId, deletedAt: null },
+  });
 
   if (!file) {
     throw new NotFoundError('File not found');
   }
 
-  if (file.userId !== userId) {
-    throw new ForbiddenError('Access denied');
+  return file;
+}
+
+async function getFileOrThrowIncludingDeleted(fileId: string, userId: string): Promise<File> {
+  const file = await prisma.file.findFirst({ where: { id: fileId, userId } });
+
+  if (!file) {
+    throw new NotFoundError('File not found');
   }
 
   return file;
@@ -67,6 +76,8 @@ export async function listFiles(
 
   const where = {
     userId,
+    deletedAt: params.trash ? { not: null } : null,
+    ...(params.isPublic !== undefined && { isPublic: params.isPublic }),
     ...(params.search && {
       OR: [
         { originalName: { contains: params.search, mode: 'insensitive' as const } },
@@ -97,15 +108,24 @@ export async function listFiles(
   };
 }
 
+export async function listTrash(
+  userId: string,
+  params: PaginationInput
+): Promise<PaginatedResponse<FileUploadResponse>> {
+  return listFiles(userId, { ...params, trash: true });
+}
+
 export async function getFile(fileId: string, userId: string): Promise<FileUploadResponse> {
   const file = await getFileOrThrow(fileId, userId);
   return toFileResponse(file);
 }
 
 export async function getFileByShareId(shareId: string): Promise<FileUploadResponse> {
-  const file = await prisma.file.findUnique({ where: { shareId } });
+  const file = await prisma.file.findFirst({
+    where: { shareId, isPublic: true, deletedAt: null },
+  });
 
-  if (!file || !file.isPublic) {
+  if (!file) {
     throw new NotFoundError('File not found or not public');
   }
 
@@ -119,9 +139,11 @@ export async function getFilePath(fileId: string, userId: string): Promise<{ fil
 }
 
 export async function getPublicFilePath(shareId: string): Promise<{ filePath: string; originalName: string }> {
-  const file = await prisma.file.findUnique({ where: { shareId } });
+  const file = await prisma.file.findFirst({
+    where: { shareId, isPublic: true, deletedAt: null },
+  });
 
-  if (!file || !file.isPublic) {
+  if (!file) {
     throw new NotFoundError('File not found or not public');
   }
 
@@ -131,6 +153,30 @@ export async function getPublicFilePath(shareId: string): Promise<{ filePath: st
 
 export async function deleteFile(fileId: string, userId: string): Promise<void> {
   const file = await getFileOrThrow(fileId, userId);
+
+  await prisma.file.update({
+    where: { id: fileId },
+    data: { deletedAt: new Date() },
+  });
+}
+
+export async function restoreFile(fileId: string, userId: string): Promise<FileUploadResponse> {
+  const file = await getFileOrThrowIncludingDeleted(fileId, userId);
+
+  if (!file.deletedAt) {
+    throw new ForbiddenError('File is not in trash');
+  }
+
+  const updatedFile = await prisma.file.update({
+    where: { id: fileId },
+    data: { deletedAt: null },
+  });
+
+  return toFileResponse(updatedFile);
+}
+
+export async function permanentDeleteFile(fileId: string, userId: string): Promise<void> {
+  const file = await getFileOrThrowIncludingDeleted(fileId, userId);
 
   const filePath = path.join(UPLOAD_DIR, file.filename);
   await fs.unlink(filePath).catch(() => {});

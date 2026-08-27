@@ -54,6 +54,14 @@ export const paginationSchema = z.object({
   search: z
     .string()
     .optional(),
+  isPublic: z
+    .string()
+    .optional()
+    .transform((value) => (value === undefined ? undefined : value === 'true')),
+  trash: z
+    .string()
+    .optional()
+    .transform((value) => (value === undefined ? undefined : value === 'true')),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

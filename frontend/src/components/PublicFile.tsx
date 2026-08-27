@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { usePublicFile } from '../hooks/useFiles';
+import { getMediaUrl } from '../api';
 
 export default function PublicFile() {
   const { shareId } = useParams<{ shareId: string }>();
   const { data: file, isLoading, error } = usePublicFile(shareId);
+  const [imgError, setImgError] = useState(false);
 
   if (isLoading) {
     return (
@@ -45,8 +48,8 @@ export default function PublicFile() {
     <div className="public-file-container">
       <div className="public-file-card">
         <div className="file-preview">
-          {file.mimeType.startsWith('image/') ? (
-            <img src={file.url} alt={file.originalName} />
+          {file.mimeType.startsWith('image/') && !imgError ? (
+            <img src={getMediaUrl(file.filename)} alt={file.originalName} onError={() => setImgError(true)} />
           ) : (
             <div className="file-icon-large">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,7 +74,7 @@ export default function PublicFile() {
           </div>
 
           <a
-            href={file.url}
+            href={`/api/files/public/${file.shareId}/download`}
             download={file.originalName}
             className="btn-primary download-btn"
           >

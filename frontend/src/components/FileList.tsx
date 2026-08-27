@@ -4,12 +4,14 @@ import FileCard from './FileCard';
 
 interface FileListProps {
   files: FileUploadResponse[];
+  variant?: 'normal' | 'trash';
 }
 
-export default function FileList({ files }: FileListProps) {
+export default function FileList({ files, variant = 'normal' }: FileListProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   if (files.length === 0) {
+    const isTrash = variant === 'trash';
     return (
       <div className="empty-state">
         <svg
@@ -25,8 +27,12 @@ export default function FileList({ files }: FileListProps) {
             d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
           />
         </svg>
-        <h3>No files yet</h3>
-        <p>Upload your first file to get started</p>
+        <h3>{isTrash ? 'Trash is empty' : 'No files yet'}</h3>
+        <p>
+          {isTrash
+            ? 'Files you delete will appear here for recovery'
+            : 'Upload your first file to get started'}
+        </p>
       </div>
     );
   }
@@ -66,7 +72,7 @@ export default function FileList({ files }: FileListProps) {
 
       <div className={`files-${viewMode}`}>
         {files.map((file) => (
-          <FileCard key={file.id} file={file} viewMode={viewMode} />
+          <FileCard key={file.id} file={file} viewMode={viewMode} variant={variant} />
         ))}
       </div>
     </div>

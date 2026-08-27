@@ -18,6 +18,7 @@ export interface FileUploadResponse {
   url: string;
   isPublic: boolean;
   shareId: string | null;
+  deletedAt: string | null;
   createdAt: Date;
 }
 

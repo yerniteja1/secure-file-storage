@@ -1,10 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { filesAPI } from '../api';
+import { filesAPI, FileListParams } from '../api';
 
-export function useFiles(page: number = 1, limit: number = 10, search?: string) {
+export function useFiles(params: FileListParams = {}) {
+  const { page = 1, limit = 10, search, isPublic, trash } = params;
+
   return useQuery({
-    queryKey: ['files', page, search],
-    queryFn: () => filesAPI.list(page, limit, search || undefined),
+    queryKey: ['files', page, search, isPublic, trash],
+    queryFn: () => filesAPI.list({ page, limit, search, isPublic, trash }),
     select: (response) => response.data,
   });
 }
@@ -22,7 +24,7 @@ export function usePublicFile(shareId: string | undefined) {
   return useQuery({
     queryKey: ['publicFile', shareId],
     queryFn: () => filesAPI.getPublic(shareId!),
-    select: (response) => response.data,
+    select: (response) => response.data.data,
     enabled: !!shareId,
   });
 }
@@ -32,6 +34,28 @@ export function useDeleteFile() {
 
   return useMutation({
     mutationFn: (id: string) => filesAPI.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['files'] });
+    },
+  });
+}
+
+export function useRestoreFile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => filesAPI.restore(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['files'] });
+    },
+  });
+}
+
+export function usePermanentDeleteFile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => filesAPI.permanentDelete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] });
     },
