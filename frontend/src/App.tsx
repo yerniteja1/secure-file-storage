@@ -5,6 +5,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
 import PublicFile from './components/PublicFile';
+import Landing from './components/Landing';
 import './App.css';
 
 const queryClient = new QueryClient();
@@ -69,8 +70,8 @@ function App() {
                 }
               />
               <Route path="/share/:shareId" element={<PublicFile />} />
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/" element={<Landing />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>
         </Router>
